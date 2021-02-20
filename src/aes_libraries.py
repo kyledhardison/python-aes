@@ -46,4 +46,3 @@ class sbox:
         y = byte & 15
         return sbox.sbox_table[x][y]
 
-
