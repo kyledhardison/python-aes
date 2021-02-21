@@ -1,7 +1,6 @@
 
 from src.aes_libraries import sbox
 
-
 # Global Variables
 AES_SIZE = 128
 BYTE_SIZE = 8
@@ -91,6 +90,9 @@ def mix_columns(a, b, c, d):
 #########################################################################################
 
 def AES_Routine():
+    """
+    Read in the plaintext message and subkeys, and perform the 1st round of AES encryption.
+    """
     print("Running AES Encryption:")
     with open("data/plaintext.txt", "r") as f:
         plaintext = f.read()
@@ -159,12 +161,16 @@ def AES_Routine():
 
     print("AES Round 1 output:")
     print(final)
+    print()
 
     with open("data/result.txt", "w") as f:
         f.write(final)
 
 
 def subkey_gen():
+    """
+    Read in the first subkey, and use key expansion to generate the second.
+    """
     print()
     print("Running Subkey Generation:")
     # Read in and parse subkeys
@@ -176,9 +182,52 @@ def subkey_gen():
     print("Subkey input: " + subkey0)
     print()
 
-    subkey0 = hex_to_int(subkey0)
+    subkey0 = bin_to_array(int_to_bin(hex_to_int(subkey0), AES_SIZE))
 
+    # Parse subkey to 'w' bytes
+    w0 = subkey0[0]
+    w1 = subkey0[1]
+    w2 = subkey0[2]
+    w3 = subkey0[3]
+
+    # Copy w3 by value to g, used to represent the g() function
+    g = w3[:]
+
+    # Rotate all w3 byte 1 to the left
+    g.append(g.pop(0))
+
+    # Perform an s-box SubBytes on each byte in w3
+    for i in range(4):
+        g[i] = sbox.lookup(g[i])
+
+    rcon = [ 0x01, 0x00, 0x00, 0x00 ] # Round constant for first subkey expansion round only
+    # XOR the bytes with a round constant
+    for i in range(4):
+        g[i] = g[i] ^ rcon[i]
     
+    w4 = []
+    w5 = []
+    w6 = []
+    w7 = []
+    
+    for i in range(4):
+        w4.append(w0[i] ^ g[i])
+        w5.append(w4[i] ^ w1[i])
+        w6.append(w5[i] ^ w2[i])
+        w7.append(w6[i] ^ w3[i])
+
+    subkey1 = array_to_hex([ w4, w5, w6, w7 ])
+
+    print("Subkey1 generated: ")
+    print(subkey1)
+
+    with open("data/result_subkey.txt", "w") as f:
+        f.write(subkey1)
+
+
+#########################################################################################
+# Main 
+#########################################################################################
 
 def main():
     AES_Routine()
